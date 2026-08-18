@@ -85,15 +85,16 @@
             width: 100%;
         }
 
-        select {
+        select, input[type="text"] {
             padding: 0.75rem;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 1rem;
             width: 100%;
             max-width: 450px;
-            cursor: pointer;
         }
+        
+        select { cursor: pointer; }
         
         select:disabled {
             background-color: #f1f5f9;
@@ -215,7 +216,7 @@
         <h2>Select Competing Teams</h2>
         <p>Check the boxes for the teams participating in this session:</p>
         
-        <div class="checkbox-group">
+        <div class="checkbox-group" id="team-checkbox-group">
             <label class="checkbox-label">
                 <input type="checkbox" value="Gem City Glutes" class="team-cb"> Gem City Glutes
             </label>
@@ -232,8 +233,17 @@
                 <input type="checkbox" value="Dayton Dorsiflexors" class="team-cb"> Dayton Dorsiflexors
             </label>
             <label class="checkbox-label">
-                <input type="checkbox" value="Proproceptive Pilots" class="team-cb"> Proproceptive Pilots
+                <input type="checkbox" value="Proproceptive Pilots" class="team-cb"> Proprioceptive Pilots
             </label>
+        </div>
+
+        <!-- Add Custom Team Section -->
+        <div style="margin-bottom: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <p style="margin-top: 0; margin-bottom: 0.5rem; font-weight: 500;">Need to add another team?</p>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="text" id="custom-team-input" placeholder="Enter new team name" style="margin: 0; max-width: 300px;">
+                <button class="btn btn-outline" onclick="addCustomTeam()" style="padding: 0.75rem 1rem;">Add Team</button>
+            </div>
         </div>
 
         <button class="btn" onclick="startTracking()">Create Scoreboard</button>
@@ -318,6 +328,36 @@
             }
         };
 
+        function addCustomTeam() {
+            const input = document.getElementById('custom-team-input');
+            const teamName = input.value.trim();
+
+            if (!teamName) {
+                alert("Please enter a team name.");
+                return;
+            }
+
+            const checkboxGroup = document.getElementById('team-checkbox-group');
+            
+            // Create the new label and checkbox
+            const label = document.createElement('label');
+            label.className = 'checkbox-label custom-added-team';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = teamName;
+            checkbox.className = 'team-cb';
+            checkbox.checked = true; // Automatically check it for convenience
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(' ' + teamName));
+
+            checkboxGroup.appendChild(label);
+
+            // Clear the input box
+            input.value = '';
+        }
+
         function startTracking() {
             const checkboxes = document.querySelectorAll('.team-cb:checked');
             
@@ -373,7 +413,7 @@
             
             isEventActive = false;
             
-            // Optionally Auto-advance the dropdown to the next event
+            // Auto-advance the dropdown to the next event
             if (selectEl.selectedIndex < selectEl.options.length - 1) {
                 selectEl.selectedIndex++;
                 savedDropdownIndex = selectEl.selectedIndex;
@@ -384,7 +424,6 @@
             renderScoreboard();
         }
 
-        // Toggles buttons and dropdown based on whether an event is active
         function updateEventUI() {
             const startBtn = document.getElementById('start-event-btn');
             const stopBtn = document.getElementById('stop-event-btn');
@@ -405,7 +444,7 @@
         }
 
         function updateScore(index, change) {
-            if (!isEventActive) return; // Failsafe
+            if (!isEventActive) return; 
 
             teams[index].currentScore += change;
             saveData();
@@ -416,7 +455,6 @@
             const board = document.getElementById('scoreboard');
             board.innerHTML = '';
 
-            // If event is not active, buttons should visually show they are disabled
             const disabledState = isEventActive ? '' : 'disabled';
 
             teams.forEach((team, index) => {
@@ -490,7 +528,11 @@
                 isEventActive = false;
                 savedDropdownIndex = 0;
                 
+                // Uncheck default boxes
                 document.querySelectorAll('.team-cb').forEach(cb => cb.checked = false);
+                
+                // Remove custom team checkboxes completely
+                document.querySelectorAll('.custom-added-team').forEach(el => el.remove());
                 
                 document.getElementById('phase-2').classList.add('hidden');
                 document.getElementById('phase-1').classList.remove('hidden');
