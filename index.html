@@ -75,7 +75,6 @@
 
         .name-row { margin-bottom: 1rem; }
         
-        /* Scoreboard Specifics */
         .team-card { text-align: center; }
         .score-display { 
             font-size: 4rem; 
@@ -94,9 +93,9 @@
     </style>
 </head>
 <body>
-    <h1>Scoreboard Setup</h1>
+    <h1 id="main-title">Scoreboard Setup</h1>
 
-    <!-- Phase 1: How many teams? -->
+    <!-- Phase 1: Number of Teams -->
     <div id="phase-1" class="card">
         <h2>1. Number of Teams</h2>
         <p>How many teams are competing?</p>
@@ -105,7 +104,7 @@
         <button class="btn" onclick="generateNameInputs()">Next Step</button>
     </div>
 
-    <!-- Phase 2: Name the teams -->
+    <!-- Phase 2: Team Names -->
     <div id="phase-2" class="card hidden">
         <h2>2. Team Names</h2>
         <div id="name-inputs"></div>
@@ -118,11 +117,23 @@
     <div id="phase-3" class="hidden">
         <div id="scoreboard" class="grid"></div>
         <br>
-        <button class="btn btn-outline" onclick="resetApp()">Start Over</button>
+        <button class="btn btn-outline" onclick="resetApp()">Start Over (Clear Data)</button>
     </div>
 
     <script>
         let teams = [];
+
+        // Check for saved data when the page loads
+        window.onload = function() {
+            const savedTeams = localStorage.getItem('trackerTeams');
+            if (savedTeams) {
+                teams = JSON.parse(savedTeams);
+                document.getElementById('phase-1').classList.add('hidden');
+                document.getElementById('phase-3').classList.remove('hidden');
+                document.getElementById('main-title').innerText = "Live Scoreboard";
+                renderScoreboard();
+            }
+        };
 
         function generateNameInputs() {
             const count = parseInt(document.getElementById('team-count').value);
@@ -149,24 +160,23 @@
             teams = [];
 
             for (let i = 0; i < count; i++) {
-                // Use entered name, or default to "Team X" if left blank
                 const rawName = document.getElementById(`team-name-${i}`).value.trim();
                 const finalName = rawName === '' ? `Team ${i + 1}` : rawName;
-                
                 teams.push({ id: i, name: finalName, score: 0 });
             }
 
+            saveData();
             document.getElementById('phase-2').classList.add('hidden');
             document.getElementById('phase-3').classList.remove('hidden');
-            document.querySelector('h1').innerText = "Live Scoreboard";
+            document.getElementById('main-title').innerText = "Live Scoreboard";
             renderScoreboard();
         }
 
         function updateScore(index, change) {
             teams[index].score += change;
-            // Prevent negative scores (optional - delete the next line if you want negative scores)
             if (teams[index].score < 0) teams[index].score = 0; 
             
+            saveData();
             renderScoreboard();
         }
 
@@ -188,16 +198,22 @@
             });
         }
 
+        function saveData() {
+            localStorage.setItem('trackerTeams', JSON.stringify(teams));
+        }
+
         function goBackToPhase1() {
             document.getElementById('phase-2').classList.add('hidden');
             document.getElementById('phase-1').classList.remove('hidden');
         }
 
         function resetApp() {
-            if(confirm("Are you sure you want to reset all scores and teams?")) {
+            if(confirm("Are you sure you want to reset all scores and teams? This cannot be undone.")) {
+                localStorage.removeItem('trackerTeams');
+                teams = [];
                 document.getElementById('phase-3').classList.add('hidden');
                 document.getElementById('phase-1').classList.remove('hidden');
-                document.querySelector('h1').innerText = "Scoreboard Setup";
+                document.getElementById('main-title').innerText = "Scoreboard Setup";
             }
         }
     </script>
