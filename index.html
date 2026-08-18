@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DPT Team Point Tracker</title>
+    <title>UD DPT CO2028 SUMMER OLYMPICS</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -121,7 +121,7 @@
             width: 200px;
             max-width: 100%;
             height: auto;
-            border-radius: 50%; /* Rounds out any hard edges if it's a square image */
+            border-radius: 50%;
             margin-bottom: 1rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
@@ -129,9 +129,8 @@
 </head>
 <body>
     <div class="header-container">
-        <!-- Logo added here -->
         <img src="DaytonDPTLogo.png" alt="University of Dayton DPT Logo" class="header-logo">
-        <h1 id="main-title">Scoreboard Setup</h1>
+        <h1 id="main-title">UD DPT CO2028 SUMMER OLYMPICS: Scoreboard Setup</h1>
     </div>
 
     <!-- Phase 1: Team Selection -->
@@ -183,14 +182,13 @@
                 if (teams.length > 0) {
                     document.getElementById('phase-1').classList.add('hidden');
                     document.getElementById('phase-2').classList.remove('hidden');
-                    document.getElementById('main-title').innerText = "Live Scoreboard";
+                    document.getElementById('main-title').innerText = "UD DPT CO2028 SUMMER OLYMPICS: Live Scoreboard";
                     renderScoreboard();
                 }
             }
         };
 
         function startTracking() {
-            // Find all checkboxes that are currently checked
             const checkboxes = document.querySelectorAll('.team-cb:checked');
             
             if (checkboxes.length === 0) {
@@ -200,7 +198,6 @@
 
             teams = [];
             
-            // Build the team array based on selected checkboxes
             checkboxes.forEach((cb, index) => {
                 teams.push({ id: index, name: cb.value, score: 0 });
             });
@@ -208,14 +205,12 @@
             saveData();
             document.getElementById('phase-1').classList.add('hidden');
             document.getElementById('phase-2').classList.remove('hidden');
-            document.getElementById('main-title').innerText = "Live Scoreboard";
+            document.getElementById('main-title').innerText = "UD DPT CO2028 SUMMER OLYMPICS: Live Scoreboard";
             renderScoreboard();
         }
 
         function updateScore(index, change) {
-            // Scores can now go into the negatives because the zero-limit check was removed
             teams[index].score += change;
-            
             saveData();
             renderScoreboard();
         }
@@ -247,12 +242,11 @@
                 localStorage.removeItem('trackerTeams');
                 teams = [];
                 
-                // Uncheck all boxes visually
                 document.querySelectorAll('.team-cb').forEach(cb => cb.checked = false);
                 
                 document.getElementById('phase-2').classList.add('hidden');
                 document.getElementById('phase-1').classList.remove('hidden');
-                document.getElementById('main-title').innerText = "Scoreboard Setup";
+                document.getElementById('main-title').innerText = "UD DPT CO2028 SUMMER OLYMPICS: Scoreboard Setup";
             }
         }
     </script>
