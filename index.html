@@ -185,9 +185,12 @@
         }
         
         .leaderboard-list li {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             padding: 0.5rem 0;
             border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .history-list {
@@ -233,7 +236,7 @@
                 <input type="checkbox" value="Dayton Dorsiflexors" class="team-cb"> Dayton Dorsiflexors
             </label>
             <label class="checkbox-label">
-                <input type="checkbox" value="Proproceptive Pilots" class="team-cb"> Proprioceptive Pilots
+                <input type="checkbox" value="Proproceptive Pilots" class="team-cb"> Proproceptive Pilots
             </label>
         </div>
 
@@ -339,7 +342,6 @@
 
             const checkboxGroup = document.getElementById('team-checkbox-group');
             
-            // Create the new label and checkbox
             const label = document.createElement('label');
             label.className = 'checkbox-label custom-added-team';
             
@@ -347,14 +349,12 @@
             checkbox.type = 'checkbox';
             checkbox.value = teamName;
             checkbox.className = 'team-cb';
-            checkbox.checked = true; // Automatically check it for convenience
+            checkbox.checked = true; 
 
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(' ' + teamName));
 
             checkboxGroup.appendChild(label);
-
-            // Clear the input box
             input.value = '';
         }
 
@@ -413,7 +413,6 @@
             
             isEventActive = false;
             
-            // Auto-advance the dropdown to the next event
             if (selectEl.selectedIndex < selectEl.options.length - 1) {
                 selectEl.selectedIndex++;
                 savedDropdownIndex = selectEl.selectedIndex;
@@ -449,6 +448,24 @@
             teams[index].currentScore += change;
             saveData();
             renderScoreboard();
+        }
+
+        // Allows editing a team's grand total directly in case of errors
+        function editGrandTotal(teamName) {
+            const team = teams.find(t => t.name === teamName);
+            if (!team) return;
+
+            const input = prompt(`Enter corrected grand total score for ${team.name}:`, team.totalScore);
+            if (input !== null) {
+                const newScore = parseInt(input);
+                if (!isNaN(newScore)) {
+                    team.totalScore = newScore;
+                    saveData();
+                    renderScoreboard();
+                } else {
+                    alert("Please enter a valid number.");
+                }
+            }
         }
 
         function renderScoreboard() {
@@ -489,7 +506,10 @@
             
             let html = `<h3>🏆 Current Standings</h3><ul class="leaderboard-list">`;
             sortedTeams.forEach(t => {
-                html += `<li><strong>${t.name}:</strong> ${t.totalScore} pts</li>`;
+                html += `<li>
+                    <span><strong>${t.name}:</strong> ${t.totalScore} pts</span>
+                    <button class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" onclick="editGrandTotal('${t.name}')">Edit Total</button>
+                </li>`;
             });
             html += `</ul>`;
 
@@ -528,10 +548,7 @@
                 isEventActive = false;
                 savedDropdownIndex = 0;
                 
-                // Uncheck default boxes
                 document.querySelectorAll('.team-cb').forEach(cb => cb.checked = false);
-                
-                // Remove custom team checkboxes completely
                 document.querySelectorAll('.custom-added-team').forEach(el => el.remove());
                 
                 document.getElementById('phase-2').classList.add('hidden');
