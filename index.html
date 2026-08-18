@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Point Tracker</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+        }
+        
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 2rem; 
+        }
+        
+        .hidden { display: none !important; }
+        
+        .card { 
+            background: var(--card-bg);
+            border: 1px solid #e2e8f0; 
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 1rem; 
+        }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 1.5rem; 
+        }
+        
+        .btn { 
+            padding: 0.75rem 1.5rem; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600;
+            cursor: pointer; 
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover { background: var(--primary-hover); }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        input[type="number"], input[type="text"] {
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 300px;
+            margin-top: 0.5rem;
+        }
+
+        .name-row { margin-bottom: 1rem; }
+        
+        /* Scoreboard Specifics */
+        .team-card { text-align: center; }
+        .score-display { 
+            font-size: 4rem; 
+            font-weight: 800; 
+            margin: 1rem 0; 
+            color: var(--primary);
+        }
+        .score-btn { 
+            font-size: 1.5rem; 
+            width: 50px; 
+            height: 50px; 
+            padding: 0;
+            margin: 0 0.5rem;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Scoreboard Setup</h1>
+
+    <!-- Phase 1: How many teams? -->
+    <div id="phase-1" class="card">
+        <h2>1. Number of Teams</h2>
+        <p>How many teams are competing?</p>
+        <input type="number" id="team-count" min="2" max="20" value="2">
+        <br><br>
+        <button class="btn" onclick="generateNameInputs()">Next Step</button>
+    </div>
+
+    <!-- Phase 2: Name the teams -->
+    <div id="phase-2" class="card hidden">
+        <h2>2. Team Names</h2>
+        <div id="name-inputs"></div>
+        <br>
+        <button class="btn btn-outline" onclick="goBackToPhase1()">Back</button>
+        <button class="btn" onclick="startTracking()">Create Scoreboard</button>
+    </div>
+
+    <!-- Phase 3: Active Scoreboard -->
+    <div id="phase-3" class="hidden">
+        <div id="scoreboard" class="grid"></div>
+        <br>
+        <button class="btn btn-outline" onclick="resetApp()">Start Over</button>
+    </div>
+
+    <script>
+        let teams = [];
+
+        function generateNameInputs() {
+            const count = parseInt(document.getElementById('team-count').value);
+            if (count < 1) return;
+
+            const container = document.getElementById('name-inputs');
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                container.innerHTML += `
+                    <div class="name-row">
+                        <label><strong>Team ${i + 1} Name:</strong></label><br>
+                        <input type="text" id="team-name-${i}" placeholder="Enter name or leave blank">
+                    </div>
+                `;
+            }
+
+            document.getElementById('phase-1').classList.add('hidden');
+            document.getElementById('phase-2').classList.remove('hidden');
+        }
+
+        function startTracking() {
+            const count = parseInt(document.getElementById('team-count').value);
+            teams = [];
+
+            for (let i = 0; i < count; i++) {
+                // Use entered name, or default to "Team X" if left blank
+                const rawName = document.getElementById(`team-name-${i}`).value.trim();
+                const finalName = rawName === '' ? `Team ${i + 1}` : rawName;
+                
+                teams.push({ id: i, name: finalName, score: 0 });
+            }
+
+            document.getElementById('phase-2').classList.add('hidden');
+            document.getElementById('phase-3').classList.remove('hidden');
+            document.querySelector('h1').innerText = "Live Scoreboard";
+            renderScoreboard();
+        }
+
+        function updateScore(index, change) {
+            teams[index].score += change;
+            // Prevent negative scores (optional - delete the next line if you want negative scores)
+            if (teams[index].score < 0) teams[index].score = 0; 
+            
+            renderScoreboard();
+        }
+
+        function renderScoreboard() {
+            const board = document.getElementById('scoreboard');
+            board.innerHTML = '';
+
+            teams.forEach((team, index) => {
+                board.innerHTML += `
+                    <div class="card team-card">
+                        <h3>${team.name}</h3>
+                        <div class="score-display">${team.score}</div>
+                        <div>
+                            <button class="btn btn-outline score-btn" onclick="updateScore(${index}, -1)">-1</button>
+                            <button class="btn score-btn" onclick="updateScore(${index}, 1)">+1</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function goBackToPhase1() {
+            document.getElementById('phase-2').classList.add('hidden');
+            document.getElementById('phase-1').classList.remove('hidden');
+        }
+
+        function resetApp() {
+            if(confirm("Are you sure you want to reset all scores and teams?")) {
+                document.getElementById('phase-3').classList.add('hidden');
+                document.getElementById('phase-1').classList.remove('hidden');
+                document.querySelector('h1').innerText = "Scoreboard Setup";
+            }
+        }
+    </script>
+</body>
+</html>
