@@ -62,18 +62,38 @@
             background: var(--primary);
             color: white;
         }
-        
-        input[type="number"], input[type="text"] {
+
+        /* Checkbox Specific Styles */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin: 1.5rem 0;
             padding: 0.5rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 1rem;
-            width: 100%;
-            max-width: 300px;
-            margin-top: 0.5rem;
         }
 
-        .name-row { margin-bottom: 1rem; }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .checkbox-label:hover {
+            background-color: #f1f5f9;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 1rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
         
         .team-card { text-align: center; }
         .score-display { 
@@ -95,26 +115,37 @@
 <body>
     <h1 id="main-title">Scoreboard Setup</h1>
 
-    <!-- Phase 1: Number of Teams -->
+    <!-- Phase 1: Team Selection -->
     <div id="phase-1" class="card">
-        <h2>1. Number of Teams</h2>
-        <p>How many teams are competing?</p>
-        <input type="number" id="team-count" min="2" max="20" value="2">
-        <br><br>
-        <button class="btn" onclick="generateNameInputs()">Next Step</button>
-    </div>
+        <h2>Select Competing Teams</h2>
+        <p>Check the boxes for the teams participating in this session:</p>
+        
+        <div class="checkbox-group">
+            <label class="checkbox-label">
+                <input type="checkbox" value="Gem City Glutes" class="team-cb"> Gem City Glutes
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" value="Flyer Flexors" class="team-cb"> Flyer Flexors
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" value="Gait Keepers" class="team-cb"> Gait Keepers
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" value="Rudy’s Rotators" class="team-cb"> Rudy’s Rotators
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" value="Dayton Dorsiflexors" class="team-cb"> Dayton Dorsiflexors
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" value="Proproceptive Pilots" class="team-cb"> Proproceptive Pilots
+            </label>
+        </div>
 
-    <!-- Phase 2: Team Names -->
-    <div id="phase-2" class="card hidden">
-        <h2>2. Team Names</h2>
-        <div id="name-inputs"></div>
-        <br>
-        <button class="btn btn-outline" onclick="goBackToPhase1()">Back</button>
         <button class="btn" onclick="startTracking()">Create Scoreboard</button>
     </div>
 
-    <!-- Phase 3: Active Scoreboard -->
-    <div id="phase-3" class="hidden">
+    <!-- Phase 2: Active Scoreboard -->
+    <div id="phase-2" class="hidden">
         <div id="scoreboard" class="grid"></div>
         <br>
         <button class="btn btn-outline" onclick="resetApp()">Start Over (Clear Data)</button>
@@ -128,52 +159,41 @@
             const savedTeams = localStorage.getItem('trackerTeams');
             if (savedTeams) {
                 teams = JSON.parse(savedTeams);
-                document.getElementById('phase-1').classList.add('hidden');
-                document.getElementById('phase-3').classList.remove('hidden');
-                document.getElementById('main-title').innerText = "Live Scoreboard";
-                renderScoreboard();
+                if (teams.length > 0) {
+                    document.getElementById('phase-1').classList.add('hidden');
+                    document.getElementById('phase-2').classList.remove('hidden');
+                    document.getElementById('main-title').innerText = "Live Scoreboard";
+                    renderScoreboard();
+                }
             }
         };
 
-        function generateNameInputs() {
-            const count = parseInt(document.getElementById('team-count').value);
-            if (count < 1) return;
-
-            const container = document.getElementById('name-inputs');
-            container.innerHTML = '';
-
-            for (let i = 0; i < count; i++) {
-                container.innerHTML += `
-                    <div class="name-row">
-                        <label><strong>Team ${i + 1} Name:</strong></label><br>
-                        <input type="text" id="team-name-${i}" placeholder="Enter name or leave blank">
-                    </div>
-                `;
-            }
-
-            document.getElementById('phase-1').classList.add('hidden');
-            document.getElementById('phase-2').classList.remove('hidden');
-        }
-
         function startTracking() {
-            const count = parseInt(document.getElementById('team-count').value);
-            teams = [];
-
-            for (let i = 0; i < count; i++) {
-                const rawName = document.getElementById(`team-name-${i}`).value.trim();
-                const finalName = rawName === '' ? `Team ${i + 1}` : rawName;
-                teams.push({ id: i, name: finalName, score: 0 });
+            // Find all checkboxes that are currently checked
+            const checkboxes = document.querySelectorAll('.team-cb:checked');
+            
+            if (checkboxes.length === 0) {
+                alert("Please select at least one team to start!");
+                return;
             }
+
+            teams = [];
+            
+            // Build the team array based on selected checkboxes
+            checkboxes.forEach((cb, index) => {
+                teams.push({ id: index, name: cb.value, score: 0 });
+            });
 
             saveData();
-            document.getElementById('phase-2').classList.add('hidden');
-            document.getElementById('phase-3').classList.remove('hidden');
+            document.getElementById('phase-1').classList.add('hidden');
+            document.getElementById('phase-2').classList.remove('hidden');
             document.getElementById('main-title').innerText = "Live Scoreboard";
             renderScoreboard();
         }
 
         function updateScore(index, change) {
             teams[index].score += change;
+            // Prevents scores from dropping below zero
             if (teams[index].score < 0) teams[index].score = 0; 
             
             saveData();
@@ -202,16 +222,15 @@
             localStorage.setItem('trackerTeams', JSON.stringify(teams));
         }
 
-        function goBackToPhase1() {
-            document.getElementById('phase-2').classList.add('hidden');
-            document.getElementById('phase-1').classList.remove('hidden');
-        }
-
         function resetApp() {
-            if(confirm("Are you sure you want to reset all scores and teams? This cannot be undone.")) {
+            if(confirm("Are you sure you want to reset all scores and return to setup? This cannot be undone.")) {
                 localStorage.removeItem('trackerTeams');
                 teams = [];
-                document.getElementById('phase-3').classList.add('hidden');
+                
+                // Uncheck all boxes visually
+                document.querySelectorAll('.team-cb').forEach(cb => cb.checked = false);
+                
+                document.getElementById('phase-2').classList.add('hidden');
                 document.getElementById('phase-1').classList.remove('hidden');
                 document.getElementById('main-title').innerText = "Scoreboard Setup";
             }
