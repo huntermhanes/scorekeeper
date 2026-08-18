@@ -11,13 +11,15 @@
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --text: #0f172a;
+            --yellow-card: #eab308;
+            --red-card: #ef4444;
         }
         
         body { 
             font-family: system-ui, -apple-system, sans-serif; 
             background-color: var(--bg);
             color: var(--text);
-            max-width: 900px; 
+            max-width: 1000px; 
             margin: 0 auto; 
             padding: 2rem; 
         }
@@ -30,12 +32,12 @@
             padding: 1.5rem; 
             border-radius: 12px; 
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            margin-bottom: 1rem; 
+            margin-bottom: 1.5rem; 
         }
         
         .grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
             gap: 1.5rem; 
         }
         
@@ -47,10 +49,10 @@
             border-radius: 8px; 
             font-weight: 600;
             cursor: pointer; 
-            transition: background-color 0.2s;
+            transition: opacity 0.2s;
         }
         
-        .btn:hover { background: var(--primary-hover); }
+        .btn:hover { opacity: 0.85; }
         
         .btn-outline {
             background: transparent;
@@ -61,6 +63,28 @@
         .btn-outline:hover {
             background: var(--primary);
             color: white;
+        }
+
+        /* Penalty Card Buttons */
+        .btn-yellow {
+            background: var(--yellow-card);
+            color: #000;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        .btn-red {
+            background: var(--red-card);
+            color: white;
+            width: 100%;
+        }
+
+        input[type="text"] {
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 400px;
         }
 
         /* Checkbox Specific Styles */
@@ -95,19 +119,28 @@
             accent-color: var(--primary);
         }
         
+        /* Scoreboard Specifics */
         .team-card { text-align: center; }
         .score-display { 
             font-size: 4rem; 
             font-weight: 800; 
-            margin: 1rem 0; 
+            margin: 0.5rem 0; 
             color: var(--primary);
+        }
+        .total-display {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
         }
         .score-btn { 
             font-size: 1.5rem; 
             width: 50px; 
             height: 50px; 
             padding: 0;
-            margin: 0 0.5rem;
+            margin: 0 0.5rem 1rem 0.5rem;
             border-radius: 50%;
         }
 
@@ -116,7 +149,6 @@
             text-align: center;
             margin-bottom: 2rem;
         }
-        
         .header-logo {
             width: 200px;
             max-width: 100%;
@@ -124,6 +156,32 @@
             border-radius: 50%;
             margin-bottom: 1rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .event-controller {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .leaderboard-list li {
+            font-size: 1.2rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .history-list {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+        .history-list li {
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
@@ -164,21 +222,45 @@
 
     <!-- Phase 2: Active Scoreboard -->
     <div id="phase-2" class="hidden">
+        
+        <!-- Event Saving Controls -->
+        <div class="card" style="background-color: #f8fafc; border: 2px solid #cbd5e1;">
+            <h3>Current Event Manager</h3>
+            <div class="event-controller">
+                <input type="text" id="event-name-input" placeholder="Enter Event Name (e.g., Tug of War)">
+                <button class="btn" onclick="saveEvent()" style="background-color: #10b981;">Save Event & Add to Totals</button>
+            </div>
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 0.5rem;">Saving will lock in the current scores, add them to the Grand Total, and reset the board for the next event.</p>
+        </div>
+
+        <!-- The Team Grid -->
         <div id="scoreboard" class="grid"></div>
+        
+        <!-- History & Standings -->
+        <div class="card" style="margin-top: 2rem;">
+            <h2>Grand Totals & Event History</h2>
+            <div id="history-content"></div>
+        </div>
+
         <br>
         <div style="text-align: center;">
-            <button class="btn btn-outline" onclick="resetApp()">Start Over (Clear Data)</button>
+            <button class="btn btn-outline" onclick="resetApp()">Start Over (Erase All Data)</button>
         </div>
     </div>
 
     <script>
-        let teams = [];
+        // Updated data structure to handle events
+        let teams = []; // Array of { id, name, currentScore, totalScore }
+        let eventHistory = []; // Array of { eventName, scores: { teamName: points } }
 
-        // Check for saved data when the page loads
         window.onload = function() {
-            const savedTeams = localStorage.getItem('trackerTeams');
-            if (savedTeams) {
-                teams = JSON.parse(savedTeams);
+            // Load the advanced data object
+            const savedData = localStorage.getItem('dptTrackerData');
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                teams = parsed.teams || [];
+                eventHistory = parsed.eventHistory || [];
+                
                 if (teams.length > 0) {
                     document.getElementById('phase-1').classList.add('hidden');
                     document.getElementById('phase-2').classList.remove('hidden');
@@ -197,9 +279,15 @@
             }
 
             teams = [];
+            eventHistory = [];
             
             checkboxes.forEach((cb, index) => {
-                teams.push({ id: index, name: cb.value, score: 0 });
+                teams.push({ 
+                    id: index, 
+                    name: cb.value, 
+                    currentScore: 0, 
+                    totalScore: 0 
+                });
             });
 
             saveData();
@@ -209,8 +297,29 @@
             renderScoreboard();
         }
 
+        // Updates only the CURRENT event score
         function updateScore(index, change) {
-            teams[index].score += change;
+            teams[index].currentScore += change;
+            saveData();
+            renderScoreboard();
+        }
+
+        // Locks in the event and adds to Grand Totals
+        function saveEvent() {
+            const inputEl = document.getElementById('event-name-input');
+            const eventName = inputEl.value.trim() || `Event ${eventHistory.length + 1}`;
+
+            let record = { name: eventName, scores: {} };
+
+            teams.forEach(team => {
+                record.scores[team.name] = team.currentScore;
+                team.totalScore += team.currentScore; // Add to grand total
+                team.currentScore = 0; // Reset current event board to zero
+            });
+
+            eventHistory.push(record);
+            inputEl.value = ''; // Clear input for next event
+            
             saveData();
             renderScoreboard();
         }
@@ -222,25 +331,73 @@
             teams.forEach((team, index) => {
                 board.innerHTML += `
                     <div class="card team-card">
-                        <h3>${team.name}</h3>
-                        <div class="score-display">${team.score}</div>
+                        <h3 style="margin-bottom: 0.2rem;">${team.name}</h3>
+                        
+                        <p style="margin: 0; color: #64748b; font-size: 0.9rem;">Current Event Score</p>
+                        <div class="score-display">${team.currentScore}</div>
+                        <div class="total-display">Overall Total: ${team.totalScore}</div>
+                        
                         <div>
                             <button class="btn btn-outline score-btn" onclick="updateScore(${index}, -1)">-1</button>
                             <button class="btn score-btn" onclick="updateScore(${index}, 1)">+1</button>
                         </div>
+                        
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
+                            <button class="btn btn-yellow" onclick="updateScore(${index}, -1)">🟨 Yellow Card (-1)</button>
+                            <button class="btn btn-red" onclick="updateScore(${index}, -3)">🟥 Red Card (-3)</button>
+                        </div>
                     </div>
                 `;
             });
+
+            renderHistory();
+        }
+
+        // Generates the Standings and History log at the bottom
+        function renderHistory() {
+            const container = document.getElementById('history-content');
+            
+            // Sort a copy of teams for the Leaderboard
+            let sortedTeams = [...teams].sort((a, b) => b.totalScore - a.totalScore);
+            
+            let html = `<h3>🏆 Current Standings</h3><ul class="leaderboard-list">`;
+            sortedTeams.forEach(t => {
+                html += `<li><strong>${t.name}:</strong> ${t.totalScore} pts</li>`;
+            });
+            html += `</ul>`;
+
+            // Display Event Log if there are saved events
+            if (eventHistory.length > 0) {
+                html += `<h3 style="margin-top: 1.5rem;">📋 Past Events</h3><ul class="history-list">`;
+                // Show newest events first
+                [...eventHistory].reverse().forEach(ev => {
+                    let teamStrs = [];
+                    teams.forEach(t => {
+                        teamStrs.push(`${t.name} (${ev.scores[t.name]})`);
+                    });
+                    html += `<li><strong>${ev.name}</strong>: ${teamStrs.join(' | ')}</li>`;
+                });
+                html += `</ul>`;
+            } else {
+                html += `<p style="color: #64748b; font-size: 0.9rem;">No events have been saved yet.</p>`;
+            }
+
+            container.innerHTML = html;
         }
 
         function saveData() {
-            localStorage.setItem('trackerTeams', JSON.stringify(teams));
+            const dataToSave = {
+                teams: teams,
+                eventHistory: eventHistory
+            };
+            localStorage.setItem('dptTrackerData', JSON.stringify(dataToSave));
         }
 
         function resetApp() {
-            if(confirm("Are you sure you want to reset all scores and return to setup? This cannot be undone.")) {
-                localStorage.removeItem('trackerTeams');
+            if(confirm("Are you sure you want to completely erase ALL scores, history, and teams? This cannot be undone.")) {
+                localStorage.removeItem('dptTrackerData');
                 teams = [];
+                eventHistory = [];
                 
                 document.querySelectorAll('.team-cb').forEach(cb => cb.checked = false);
                 
