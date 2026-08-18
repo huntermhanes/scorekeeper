@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Point Tracker</title>
+    <title>DPT Team Point Tracker</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -110,10 +110,29 @@
             margin: 0 0.5rem;
             border-radius: 50%;
         }
+
+        /* Logo Header */
+        .header-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header-logo {
+            width: 200px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 50%; /* Rounds out any hard edges if it's a square image */
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
     </style>
 </head>
 <body>
-    <h1 id="main-title">Scoreboard Setup</h1>
+    <div class="header-container">
+        <!-- Logo added here -->
+        <img src="DaytonDPTLogo.png" alt="University of Dayton DPT Logo" class="header-logo">
+        <h1 id="main-title">Scoreboard Setup</h1>
+    </div>
 
     <!-- Phase 1: Team Selection -->
     <div id="phase-1" class="card">
@@ -148,7 +167,9 @@
     <div id="phase-2" class="hidden">
         <div id="scoreboard" class="grid"></div>
         <br>
-        <button class="btn btn-outline" onclick="resetApp()">Start Over (Clear Data)</button>
+        <div style="text-align: center;">
+            <button class="btn btn-outline" onclick="resetApp()">Start Over (Clear Data)</button>
+        </div>
     </div>
 
     <script>
@@ -192,9 +213,8 @@
         }
 
         function updateScore(index, change) {
+            // Scores can now go into the negatives because the zero-limit check was removed
             teams[index].score += change;
-            // Prevents scores from dropping below zero
-            if (teams[index].score < 0) teams[index].score = 0; 
             
             saveData();
             renderScoreboard();
