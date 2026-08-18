@@ -13,6 +13,8 @@
             --text: #0f172a;
             --yellow-card: #eab308;
             --red-card: #ef4444;
+            --stop-btn: #ef4444;
+            --start-btn: #10b981;
         }
         
         body { 
@@ -52,15 +54,20 @@
             transition: opacity 0.2s;
         }
         
-        .btn:hover { opacity: 0.85; }
+        .btn:hover:not(:disabled) { opacity: 0.85; }
         
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         .btn-outline {
             background: transparent;
             border: 2px solid var(--primary);
             color: var(--primary);
         }
         
-        .btn-outline:hover {
+        .btn-outline:hover:not(:disabled) {
             background: var(--primary);
             color: white;
         }
@@ -78,13 +85,19 @@
             width: 100%;
         }
 
-        input[type="text"] {
+        select {
             padding: 0.75rem;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 1rem;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
+            cursor: pointer;
+        }
+        
+        select:disabled {
+            background-color: #f1f5f9;
+            cursor: not-allowed;
         }
 
         /* Checkbox Specific Styles */
@@ -183,6 +196,12 @@
         .history-list li {
             margin-bottom: 0.5rem;
         }
+        
+        .active-event-text {
+            color: var(--start-btn);
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -227,10 +246,34 @@
         <div class="card" style="background-color: #f8fafc; border: 2px solid #cbd5e1;">
             <h3>Current Event Manager</h3>
             <div class="event-controller">
-                <input type="text" id="event-name-input" placeholder="Enter Event Name (e.g., Tug of War)">
-                <button class="btn" onclick="saveEvent()" style="background-color: #10b981;">Save Event & Add to Totals</button>
+                <select id="event-select">
+                    <optgroup label="WARM UP">
+                        <option value="Balance (neuro/anatomy terms) - Romberg Test Royal">Balance - Romberg Test Royal</option>
+                        <option value="Pool noodle javelin - Scapular Mechanics Fling">Pool noodle javelin - Scapular Mechanics Fling</option>
+                        <option value="Oreo - Frontalis to Orbicularis Oris Oreo Pass">Oreo - Frontalis to Orbicularis Oris Oreo Pass</option>
+                        <option value="Tennis ball search pick - Geriatric Search Party">Tennis ball search pick - Geriatric Search Party</option>
+                        <option value="Plank and pass (ALL) - Make the Rectus Abdominis Great Again">Plank and pass - Make the Rectus Abdominis Great Again</option>
+                    </optgroup>
+                    <optgroup label="TEAM EVENTS">
+                        <option value="3 legged relay - Wide BOS">3 legged relay - Wide BOS</option>
+                        <option value="Swiss ball relay - Splenius Capitis Push">Swiss ball relay - Splenius Capitis Push</option>
+                        <option value="Crab walk">Crab walk</option>
+                        <option value="Dizzy bat soccer - Vestibular Disequilibrium soccer">Dizzy bat soccer - Vestibular Disequilibrium soccer</option>
+                        <option value="Water transfer - Whirlpool Dash">Water transfer - Whirlpool Dash</option>
+                        <option value="Volleyball - Rotator Cuff Rally">Volleyball - Rotator Cuff Rally</option>
+                    </optgroup>
+                    <optgroup label="FINAL EVENTS">
+                        <option value="Grab cup - Muscle Spindle reaction">Grab cup - Muscle Spindle reaction</option>
+                        <option value="Tug of war - Shoulder Subluxation Pull">Tug of war - Shoulder Subluxation Pull</option>
+                        <option value="Spelling bee - The Charting Challenge">Spelling bee - The Charting Challenge</option>
+                        <option value="SKIT - SOAP Opera">SKIT - SOAP Opera</option>
+                    </optgroup>
+                </select>
+
+                <button id="start-event-btn" class="btn" onclick="startCurrentEvent()" style="background-color: var(--start-btn);">Start Event</button>
+                <button id="stop-event-btn" class="btn hidden" onclick="stopCurrentEvent()" style="background-color: var(--stop-btn);">Stop Event & Save Totals</button>
             </div>
-            <p style="font-size: 0.85rem; color: #64748b; margin-top: 0.5rem;">Saving will lock in the current scores, add them to the Grand Total, and reset the board for the next event.</p>
+            <p id="event-status-text" style="font-size: 0.85rem; color: #64748b; margin-top: 0.5rem;">Select an event and click Start to unlock scoring.</p>
         </div>
 
         <!-- The Team Grid -->
@@ -249,22 +292,27 @@
     </div>
 
     <script>
-        // Updated data structure to handle events
-        let teams = []; // Array of { id, name, currentScore, totalScore }
-        let eventHistory = []; // Array of { eventName, scores: { teamName: points } }
+        let teams = []; 
+        let eventHistory = []; 
+        let isEventActive = false;
+        let savedDropdownIndex = 0;
 
         window.onload = function() {
-            // Load the advanced data object
             const savedData = localStorage.getItem('dptTrackerData');
             if (savedData) {
                 const parsed = JSON.parse(savedData);
                 teams = parsed.teams || [];
                 eventHistory = parsed.eventHistory || [];
+                isEventActive = parsed.isEventActive || false;
+                savedDropdownIndex = parsed.savedDropdownIndex || 0;
                 
                 if (teams.length > 0) {
                     document.getElementById('phase-1').classList.add('hidden');
                     document.getElementById('phase-2').classList.remove('hidden');
                     document.getElementById('main-title').innerText = "UD DPT CO2028 SUMMER OLYMPICS: Live Scoreboard";
+                    
+                    document.getElementById('event-select').selectedIndex = savedDropdownIndex;
+                    updateEventUI();
                     renderScoreboard();
                 }
             }
@@ -280,46 +328,86 @@
 
             teams = [];
             eventHistory = [];
+            isEventActive = false;
+            savedDropdownIndex = 0;
             
             checkboxes.forEach((cb, index) => {
-                teams.push({ 
-                    id: index, 
-                    name: cb.value, 
-                    currentScore: 0, 
-                    totalScore: 0 
-                });
+                teams.push({ id: index, name: cb.value, currentScore: 0, totalScore: 0 });
             });
+
+            document.getElementById('event-select').selectedIndex = 0;
 
             saveData();
             document.getElementById('phase-1').classList.add('hidden');
             document.getElementById('phase-2').classList.remove('hidden');
             document.getElementById('main-title').innerText = "UD DPT CO2028 SUMMER OLYMPICS: Live Scoreboard";
+            updateEventUI();
             renderScoreboard();
         }
 
-        // Updates only the CURRENT event score
-        function updateScore(index, change) {
-            teams[index].currentScore += change;
+        function startCurrentEvent() {
+            isEventActive = true;
+            savedDropdownIndex = document.getElementById('event-select').selectedIndex;
             saveData();
+            updateEventUI();
             renderScoreboard();
         }
 
-        // Locks in the event and adds to Grand Totals
-        function saveEvent() {
-            const inputEl = document.getElementById('event-name-input');
-            const eventName = inputEl.value.trim() || `Event ${eventHistory.length + 1}`;
+        function stopCurrentEvent() {
+            if(!confirm("Are you sure you want to stop this event? This will lock in scores and add them to the Grand Total.")) {
+                return;
+            }
+
+            const selectEl = document.getElementById('event-select');
+            const eventName = selectEl.options[selectEl.selectedIndex].value;
 
             let record = { name: eventName, scores: {} };
 
             teams.forEach(team => {
                 record.scores[team.name] = team.currentScore;
-                team.totalScore += team.currentScore; // Add to grand total
-                team.currentScore = 0; // Reset current event board to zero
+                team.totalScore += team.currentScore; 
+                team.currentScore = 0; 
             });
 
             eventHistory.push(record);
-            inputEl.value = ''; // Clear input for next event
             
+            isEventActive = false;
+            
+            // Optionally Auto-advance the dropdown to the next event
+            if (selectEl.selectedIndex < selectEl.options.length - 1) {
+                selectEl.selectedIndex++;
+                savedDropdownIndex = selectEl.selectedIndex;
+            }
+            
+            saveData();
+            updateEventUI();
+            renderScoreboard();
+        }
+
+        // Toggles buttons and dropdown based on whether an event is active
+        function updateEventUI() {
+            const startBtn = document.getElementById('start-event-btn');
+            const stopBtn = document.getElementById('stop-event-btn');
+            const selectEl = document.getElementById('event-select');
+            const statusText = document.getElementById('event-status-text');
+
+            if (isEventActive) {
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+                selectEl.disabled = true;
+                statusText.innerHTML = "🟢 <span class='active-event-text'>Event Active: Scoring is unlocked!</span>";
+            } else {
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+                selectEl.disabled = false;
+                statusText.innerHTML = "Select an event and click Start to unlock scoring.";
+            }
+        }
+
+        function updateScore(index, change) {
+            if (!isEventActive) return; // Failsafe
+
+            teams[index].currentScore += change;
             saveData();
             renderScoreboard();
         }
@@ -327,6 +415,9 @@
         function renderScoreboard() {
             const board = document.getElementById('scoreboard');
             board.innerHTML = '';
+
+            // If event is not active, buttons should visually show they are disabled
+            const disabledState = isEventActive ? '' : 'disabled';
 
             teams.forEach((team, index) => {
                 board.innerHTML += `
@@ -338,13 +429,13 @@
                         <div class="total-display">Overall Total: ${team.totalScore}</div>
                         
                         <div>
-                            <button class="btn btn-outline score-btn" onclick="updateScore(${index}, -1)">-1</button>
-                            <button class="btn score-btn" onclick="updateScore(${index}, 1)">+1</button>
+                            <button class="btn btn-outline score-btn" onclick="updateScore(${index}, -1)" ${disabledState}>-1</button>
+                            <button class="btn score-btn" onclick="updateScore(${index}, 1)" ${disabledState}>+1</button>
                         </div>
                         
                         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
-                            <button class="btn btn-yellow" onclick="updateScore(${index}, -1)">🟨 Yellow Card (-1)</button>
-                            <button class="btn btn-red" onclick="updateScore(${index}, -3)">🟥 Red Card (-3)</button>
+                            <button class="btn btn-yellow" onclick="updateScore(${index}, -1)" ${disabledState}>🟨 Yellow Card (-1)</button>
+                            <button class="btn btn-red" onclick="updateScore(${index}, -3)" ${disabledState}>🟥 Red Card (-3)</button>
                         </div>
                     </div>
                 `;
@@ -353,11 +444,9 @@
             renderHistory();
         }
 
-        // Generates the Standings and History log at the bottom
         function renderHistory() {
             const container = document.getElementById('history-content');
             
-            // Sort a copy of teams for the Leaderboard
             let sortedTeams = [...teams].sort((a, b) => b.totalScore - a.totalScore);
             
             let html = `<h3>🏆 Current Standings</h3><ul class="leaderboard-list">`;
@@ -366,10 +455,8 @@
             });
             html += `</ul>`;
 
-            // Display Event Log if there are saved events
             if (eventHistory.length > 0) {
                 html += `<h3 style="margin-top: 1.5rem;">📋 Past Events</h3><ul class="history-list">`;
-                // Show newest events first
                 [...eventHistory].reverse().forEach(ev => {
                     let teamStrs = [];
                     teams.forEach(t => {
@@ -388,7 +475,9 @@
         function saveData() {
             const dataToSave = {
                 teams: teams,
-                eventHistory: eventHistory
+                eventHistory: eventHistory,
+                isEventActive: isEventActive,
+                savedDropdownIndex: savedDropdownIndex
             };
             localStorage.setItem('dptTrackerData', JSON.stringify(dataToSave));
         }
@@ -398,6 +487,8 @@
                 localStorage.removeItem('dptTrackerData');
                 teams = [];
                 eventHistory = [];
+                isEventActive = false;
+                savedDropdownIndex = 0;
                 
                 document.querySelectorAll('.team-cb').forEach(cb => cb.checked = false);
                 
