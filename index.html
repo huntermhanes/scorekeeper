@@ -236,7 +236,7 @@
                 <input type="checkbox" value="Dayton Dorsiflexors" class="team-cb"> Dayton Dorsiflexors
             </label>
             <label class="checkbox-label">
-                <input type="checkbox" value="Proproceptive Pilots" class="team-cb"> Proprioceptive Pilots
+                <input type="checkbox" value="Proproceptive Pilots" class="team-cb"> Proproceptive Pilots
             </label>
         </div>
 
@@ -261,23 +261,22 @@
             <div class="event-controller">
                 <select id="event-select">
                     <optgroup label="WARM UP">
-                        <option value="Balance (neuro/anatomy terms) - Romberg Test Royal">Balance - Romberg Test Royal</option>
+                        <option value="Balance - Romberg Test Royal">Balance - Romberg Test Royal</option>
                         <option value="Pool noodle javelin - Scapular Mechanics Fling">Pool noodle javelin - Scapular Mechanics Fling</option>
-                        <option value="Oreo - Frontalis to Orbicularis Oris Oreo Pass">Oreo - Frontalis to Orbicularis Oris Oreo Pass</option>
                         <option value="Tennis ball search pick - Geriatric Search Party">Tennis ball search pick - Geriatric Search Party</option>
-                        <option value="Plank and pass (ALL) - Make the Rectus Abdominis Great Again">Plank and pass - Make the Rectus Abdominis Great Again</option>
+                        <option value="Plank and pass - Make the Rectus Abdominis Great Again">Plank and pass - Make the Rectus Abdominis Great Again</option>
                     </optgroup>
                     <optgroup label="TEAM EVENTS">
                         <option value="3 legged relay - Wide BOS">3 legged relay - Wide BOS</option>
+                        <option value="Crab walk/bearcrawl/wheelbarrel - Maturation Proximal Stability Milestones">Crab walk/bearcrawl/wheelbarrel - Maturation Proximal Stability Milestones</option>
                         <option value="Swiss ball relay - Splenius Capitis Push">Swiss ball relay - Splenius Capitis Push</option>
-                        <option value="Crab walk">Crab walk</option>
                         <option value="Dizzy bat soccer - Vestibular Disequilibrium soccer">Dizzy bat soccer - Vestibular Disequilibrium soccer</option>
                         <option value="Water transfer - Whirlpool Dash">Water transfer - Whirlpool Dash</option>
                         <option value="Volleyball - Rotator Cuff Rally">Volleyball - Rotator Cuff Rally</option>
                     </optgroup>
                     <optgroup label="FINAL EVENTS">
                         <option value="Grab cup - Muscle Spindle reaction">Grab cup - Muscle Spindle reaction</option>
-                        <option value="Tug of war - Shoulder Subluxation Pull">Tug of war - Shoulder Subluxation Pull</option>
+                        <option value="Oreo - Frontalis to Orbicularis Oris Oreo Pass">Oreo - Frontalis to Orbicularis Oris Oreo Pass</option>
                         <option value="Spelling bee - The Charting Challenge">Spelling bee - The Charting Challenge</option>
                         <option value="SKIT - SOAP Opera">SKIT - SOAP Opera</option>
                     </optgroup>
@@ -450,7 +449,6 @@
             renderScoreboard();
         }
 
-        // Allows editing a team's grand total directly in case of errors
         function editGrandTotal(teamName) {
             const team = teams.find(t => t.name === teamName);
             if (!team) return;
